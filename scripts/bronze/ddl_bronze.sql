@@ -1,132 +1,70 @@
-CREATE OR ALTER PROCEDURE bronze.load_bronze AS
-BEGIN
-	DECLARE @start_time DATETIME, @end_time DATETIME, @batch_start_time DATETIME, @batch_end_time DATETIME;
+-- This script creates six tables in the 'bronze' schema to store raw data for CRM and ERP systems.
 
-	BEGIN TRY
-		SET @batch_start_time = GETDATE();
-		PRINT '=========================================';
-		PRINT 'Loading bronze layer';
-		PRINT '=========================================';
+-- Table: bronze.crm_cust_info
+-- Stores customer information such as ID, name, gender, marital status, and account creation date.
 
-		-- CRM Tables
-		PRINT '------------------------------------';
-		PRINT 'Loading crm tables';
-		PRINT '------------------------------------';
+-- Table: bronze.crm_prd_info
+-- Contains product-related details, including product ID, name, cost, product line, and active date range.
 
-		-- crm_cust_info
-		SET @start_time = GETDATE();
-		PRINT '>> Truncating Table: bronze.crm_cust_info';
-		TRUNCATE TABLE bronze.crm_cust_info;
+-- Table: bronze.crm_sales_details
+-- Holds detailed sales transaction data, linking customers and products with order dates, shipment info, and financial metrics like quantity, sales amount, and price.
 
-		PRINT '>> Inserting Data Into: bronze.crm_cust_info';
-		BULK INSERT bronze.crm_cust_info
-		FROM 'C:\Users\mega4\Downloads\sql-data-warehouse-project\sql-data-warehouse-project\datasets\source_crm\cust_info.csv'
-		WITH (
-			FIRSTROW = 2,
-			FIELDTERMINATOR = ',',
-			TABLOCK
-		);
-		SET @end_time = GETDATE();
-		PRINT '>> Load Duration: ' + CAST(DATEDIFF(SECOND, @start_time, @end_time) AS NVARCHAR) + ' seconds';
+-- Table: bronze.erp_loc_a101
+-- Maps customer or company IDs (cid) to their respective countries.
 
-		-- crm_prd_info
-		SET @start_time = GETDATE();
-		PRINT '>> Truncating Table: bronze.crm_prd_info';
-		TRUNCATE TABLE bronze.crm_prd_info;
+-- Table: bronze.erp_cust_az12
+-- Captures additional ERP customer data, including birth date and gender.
 
-		PRINT '>> Inserting Data Into: bronze.crm_prd_info';
-		BULK INSERT bronze.crm_prd_info
-		FROM 'C:\Users\mega4\Downloads\sql-data-warehouse-project\sql-data-warehouse-project\datasets\source_crm\prd_info.csv'
-		WITH (
-			FIRSTROW = 2,
-			FIELDTERMINATOR = ',',
-			TABLOCK
-		);
-		SET @end_time = GETDATE();
-		PRINT '>> Load Duration: ' + CAST(DATEDIFF(SECOND, @start_time, @end_time) AS NVARCHAR) + ' seconds';
+-- Table: bronze.erp_px_cat_g1v2
+-- Stores product category and subcategory data, including maintenance-related attributes.
 
-		-- crm_sales_details
-		SET @start_time = GETDATE();
-		PRINT '>> Truncating Table: bronze.crm_sales_details';
-		TRUNCATE TABLE bronze.crm_sales_details;
+-- These tables represent raw or ingested data layers in a data lake/warehouse environment, likely used for integration, transformation, and analytics across CRM and ERP domains.
 
-		PRINT '>> Inserting Data Into: bronze.crm_sales_details';
-		BULK INSERT bronze.crm_sales_details
-		FROM 'C:\Users\mega4\Downloads\sql-data-warehouse-project\sql-data-warehouse-project\datasets\source_crm\sales_details.csv'
-		WITH (
-			FIRSTROW = 2,
-			FIELDTERMINATOR = ',',
-			TABLOCK
-		);
-		SET @end_time = GETDATE();
-		PRINT '>> Load Duration: ' + CAST(DATEDIFF(SECOND, @start_time, @end_time) AS NVARCHAR) + ' seconds';
+CREATE TABLE bronze.crm_cust_info (
+	cst_id INT, 
+	cst_key NVARCHAR(50),
+	cst_firstname NVARCHAR(50),
+	cst_lastname NVARCHAR(50),
+	cst_material_status NVARCHAR(50),
+	cst_gndr NVARCHAR(50),
+	cst_create_date DATE
+);
 
-		-- ERP Tables
-		PRINT '------------------------------------';
-		PRINT 'Loading erp tables';
-		PRINT '------------------------------------';
+CREATE TABLE bronze.crm_prd_info (
+	prd_id INT,
+	prd_key NVARCHAR(50),
+	prd_nm NVARCHAR(50),
+	prd_cost INT,
+	prd_line NVARCHAR(50),
+	prd_start_dt DATETIME,
+	prd_end_dt DATETIME
+);
 
-		-- erp_loc_a101
-		SET @start_time = GETDATE();
-		PRINT '>> Truncating Table: bronze.erp_loc_a101';
-		TRUNCATE TABLE bronze.erp_loc_a101;
+CREATE TABLE bronze.crm_sales_details (
+	sls_ord_num NVARCHAR(50),
+	sls_prd_key NVARCHAR(50),
+	sls_cust_id INT,
+	sls_order_dt INT,
+	sls_ship_dt INT,
+	sls_due_dt INT,
+	sls_sales INT,
+	sls_quantity INT,
+	sls_price INT
+);
 
-		PRINT '>> Inserting Data Into: bronze.erp_loc_a101';
-		BULK INSERT bronze.erp_loc_a101
-		FROM 'C:\Users\mega4\Downloads\sql-data-warehouse-project\sql-data-warehouse-project\datasets\source_erp\loc_a101.csv'
-		WITH (
-			FIRSTROW = 2,
-			FIELDTERMINATOR = ',',
-			TABLOCK
-		);
-		SET @end_time = GETDATE();
-		PRINT '>> Load Duration: ' + CAST(DATEDIFF(SECOND, @start_time, @end_time) AS NVARCHAR) + ' seconds';
+CREATE TABLE bronze.erp_loc_a101 (
+	cid NVARCHAR(50),
+	cntry NVARCHAR(50)
+);
 
-		-- erp_cust_az12
-		SET @start_time = GETDATE();
-		PRINT '>> Truncating Table: bronze.erp_cust_az12';
-		TRUNCATE TABLE bronze.erp_cust_az12;
-
-		PRINT '>> Inserting Data Into: bronze.erp_cust_az12';
-		BULK INSERT bronze.erp_cust_az12
-		FROM 'C:\Users\mega4\Downloads\sql-data-warehouse-project\sql-data-warehouse-project\datasets\source_erp\cust_az12.csv'
-		WITH (
-			FIRSTROW = 2,
-			FIELDTERMINATOR = ',',
-			TABLOCK
-		);
-		SET @end_time = GETDATE();
-		PRINT '>> Load Duration: ' + CAST(DATEDIFF(SECOND, @start_time, @end_time) AS NVARCHAR) + ' seconds';
-
-		-- erp_px_cat_g1v2
-		SET @start_time = GETDATE();
-		PRINT '>> Truncating Table: bronze.erp_px_cat_g1v2';
-		TRUNCATE TABLE bronze.erp_px_cat_g1v2;
-
-		PRINT '>> Inserting Data Into: bronze.erp_px_cat_g1v2';
-		BULK INSERT bronze.erp_px_cat_g1v2
-		FROM 'C:\Users\mega4\Downloads\sql-data-warehouse-project\sql-data-warehouse-project\datasets\source_erp\px_cat_g1v2.csv'
-		WITH (
-			FIRSTROW = 2,
-			FIELDTERMINATOR = ',',
-			TABLOCK
-		);
-		SET @end_time = GETDATE();
-		PRINT '>> Load Duration: ' + CAST(DATEDIFF(SECOND, @start_time, @end_time) AS NVARCHAR) + ' seconds';
-
-
-		SET @batch_end_time = GETDATE();
-		PRINT '=================================================='
-		PRINT'Loading Bronz layers is Completed';
-		PRINT ' -Total Load Duration:' + CAST(DATEDIFF(SECOND, @batch_start_time, @batch_end_time) AS NVARCHAR) + ' seconds';
-		PRINT '=================================================='
-	END TRY
-	BEGIN CATCH
-		PRINT '============================================';
-		PRINT 'ERROR OCCURRED DURING LOADING BRONZE LAYER';
-		PRINT 'Error Message : ' + ERROR_MESSAGE();
-		PRINT 'Error Number  : ' + CAST(ERROR_NUMBER() AS NVARCHAR);
-		PRINT 'Error State   : ' + CAST(ERROR_STATE() AS NVARCHAR);
-		PRINT '============================================';
-	END CATCH
-END;
+CREATE TABLE bronze.erp_cust_az12(
+	cid NVARCHAR (50),
+	bdate DATE,
+	gen NVARCHAR (50)
+);
+CREATE TABLE bronze.erp_px_cat_g1v2(
+	id NVARCHAR (50),
+	cat NVARCHAR (50),
+	subcat NVARCHAR (50),
+	maintenance NVARCHAR (50)
+);
